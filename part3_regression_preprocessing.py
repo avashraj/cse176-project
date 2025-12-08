@@ -27,8 +27,8 @@ def load_uber_data():
     csv_file = csv_files[0]
     print(f"Loading data from: {csv_file}")
     
-    # Load the dataset
-    df = pd.read_csv(csv_file)
+    # Load the dataset without key as its not useful for prediction
+    df = pd.read_csv(csv_file, index_col=0, encoding='latin-1')
     print(f"Dataset loaded: {df.shape[0]} samples, {df.shape[1]} features")
     
     return df
@@ -256,6 +256,7 @@ def preprocess_uber_data(df=None, remove_outliers=True, scale_features=False):
     print(f"Initial dataset shape: {df.shape}")
     
     # Step 1: Remove key column (unique identifier, not useful for prediction)
+    # Note: Values were already removed during loading by setting index_col=0 but this removes key from header
     if 'key' in df.columns:
         df = df.drop(columns=['key'])
         print("Removed 'key' column (unique identifier)")
@@ -358,6 +359,6 @@ if __name__ == "__main__":
     X, y = preprocess_uber_data(remove_outliers=True, scale_features=False)
     
     # Optionally save preprocessed data
-    # X.to_csv('preprocessed_features.csv', index=False)
-    # y.to_csv('preprocessed_target.csv', index=False)
-    # print("\nPreprocessed data saved to CSV files")
+    X.to_csv('preprocessed_features.csv', index=False)
+    y.to_csv('preprocessed_target.csv', index=False)
+    print("\nPreprocessed data saved to CSV files")
