@@ -6,5 +6,9 @@ dist/
 wheels/
 *.egg-info
 
+eda_plots/
+preprocessed_features.csv
+preprocessed_target.csv
+
 # Virtual environments
 .venv
