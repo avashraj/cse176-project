@@ -83,6 +83,37 @@ def extract_temporal_features(df):
     return df
 
 
+def one_hot_encode_temporal_features(df):
+    """
+    One-hot encode temporal features (hour, day, month, dayofweek).
+    
+    Args:
+        df (pd.DataFrame): Dataset with temporal feature columns
+    
+    Returns:
+        df (pd.DataFrame): Dataset with one-hot encoded temporal features
+    """
+    temporal_features = ['pickup_hour', 'pickup_day', 'pickup_month', 'pickup_dayofweek']
+    existing_features = [f for f in temporal_features if f in df.columns]
+    
+    if not existing_features:
+        print("No temporal features found to one-hot encode")
+        return df
+    
+    # One-hot encode each temporal feature
+    for feature in existing_features:
+        # Use get_dummies with prefix to create named columns
+        dummies = pd.get_dummies(df[feature], prefix=feature, dtype=int)
+        # Drop the original column and add the dummy columns
+        df = df.drop(columns=[feature])
+        df = pd.concat([df, dummies], axis=1)
+    
+    print(f"One-hot encoded temporal features: {existing_features}")
+    print(f"  Created {sum(len(pd.unique(df.filter(like=f).columns)) for f in existing_features)} new binary columns")
+    
+    return df
+
+
 def add_distance_feature(df):
     """
     Calculate trip distance from coordinates.
@@ -264,22 +295,25 @@ def preprocess_uber_data(df=None, remove_outliers=True, scale_features=False):
     # Step 2: Extract temporal features
     df = extract_temporal_features(df)
     
-    # Step 3: Add distance feature
+    # Step 3: One-hot encode temporal features
+    df = one_hot_encode_temporal_features(df)
+    
+    # Step 4: Add distance feature
     df = add_distance_feature(df)
     
-    # Step 4: Remove invalid coordinates
+    # Step 5: Remove invalid coordinates
     df = remove_invalid_coordinates(df)
     
-    # Step 5: Remove invalid fares
+    # Step 6: Remove invalid fares
     df = remove_invalid_fares(df, target_col=target_col, min_fare=0, max_fare=500)
     
-    # Step 6: Remove invalid passenger counts
+    # Step 7: Remove invalid passenger counts
     df = remove_invalid_passenger_count(df, max_passengers=8)
     
-    # Step 7: Handle missing values
+    # Step 8: Handle missing values
     df = handle_missing_values(df, strategy='drop')
     
-    # Step 8: Remove outliers using IQR method (optional)
+    # Step 9: Remove outliers using IQR method (optional)
     if remove_outliers and target_col in df.columns:
         initial_shape = df.shape[0]
         Q1 = df[target_col].quantile(0.25)
@@ -307,7 +341,7 @@ def preprocess_uber_data(df=None, remove_outliers=True, scale_features=False):
         removed = initial_shape - df.shape[0]
         print(f"Removed {removed} outliers using IQR method ({removed/initial_shape*100:.2f}%)")
     
-    # Step 9: Separate features and target
+    # Step 10: Separate features and target
     if target_col not in df.columns:
         raise ValueError(f"Target column '{target_col}' not found in dataset")
     
@@ -319,12 +353,7 @@ def preprocess_uber_data(df=None, remove_outliers=True, scale_features=False):
         X = X.drop(columns=['pickup_datetime'])
         print("Removed 'pickup_datetime' column (features already extracted)")
     
-    # Remove day of week name if it exists (we have numeric dayofweek)
-    if 'pickup_dayofweek_name' in X.columns:
-        X = X.drop(columns=['pickup_dayofweek_name'])
-        print("Removed 'pickup_dayofweek_name' column (using numeric dayofweek instead)")
-    
-    # Step 10: Scale features (optional)
+    # Step 11: Scale features (optional)
     scaler = None
     if scale_features:
         numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
