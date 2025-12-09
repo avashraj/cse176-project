@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from xgboost import XGBClassifier
+import pickle
 
 def plot_error_vs_trees(tree_list, test_errors, title, filename):
     """Plot test error as a function of the number of trees and save to PDF."""
@@ -187,6 +188,11 @@ def run_xgboost_experiment(name, X_train, y_train, X_test, y_test, tree_list=Non
         title=f"{name}: Confusion Matrix",
         filename=f"{name}_confusion_matrix.pdf",
     )
+    
+    # Save final model using pickle
+    model_filename = f"{name}_final_model.pkl"
+    with open(model_filename, "wb") as model_file:
+        pickle.dump(final_model, model_file)
 
     # Save summary text file
     results_filename = f"{name}_results.txt"
