@@ -4,7 +4,7 @@ from part3_regression_preprocessing import preprocess_uber_data
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.tree import DecisionTreeRegressor 
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 
 RANDOM_SEED = 42
 
@@ -87,10 +87,12 @@ def train_and_evaluate_adaboost(X_train, y_train, X_val, y_val, X_features_df, *
 
     # Predict and Evaluate
     y_val_pred = ada_reg_model.predict(X_val)
-    val_rmse = np.sqrt(mean_squared_error(y_val, y_val_pred))
+    val_mse = mean_squared_error(y_val, y_val_pred)
+    val_rmse = np.sqrt(val_mse)
     val_r2 = r2_score(y_val, y_val_pred)
+    val_mae = mean_absolute_error(y_val, y_val_pred)
 
-    print(f"\nVAL SET PERFORMANCE: RMSE=${val_rmse:.2f}, R²={val_r2:.4f}")
+    print(f"\nVAL SET PERFORMANCE: MSE = ${val_mse} RMSE=${val_rmse:.2f}, R²={val_r2:.4f} MAE = ${val_mae:.2f}")
     
     # ... (code to calculate and return feature importance, model, and metrics) ...
     feature_importance = ada_reg_model.feature_importances_
@@ -124,7 +126,7 @@ if __name__ == "__main__":
         'learning_rate': 0.01,
         'loss': 'linear',
         'estimator__max_depth': 9,
-        # 'estimator__min_samples_leaf': 10 
+        'estimator__min_samples_leaf': 5 
     }
 
     # Train and evaluate the baseline model
