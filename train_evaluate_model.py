@@ -120,11 +120,11 @@ if __name__ == "__main__":
     
     # Define baseline hyperparameters
     BASELINE_PARAMS = {
-        'n_estimators': 150, 
-        'learning_rate': 0.1,
-        'loss': 'square',
-        'estimator__max_depth': 6,
-        'estimator__min_samples_leaf': 10 
+        'n_estimators': 100, 
+        'learning_rate': 0.01,
+        'loss': 'linear',
+        'estimator__max_depth': 9,
+        # 'estimator__min_samples_leaf': 10 
     }
 
     # Train and evaluate the baseline model
