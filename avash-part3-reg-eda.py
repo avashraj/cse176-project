@@ -99,6 +99,21 @@ def build_manhattan(df_all: pd.DataFrame) -> pd.DataFrame:
     return df_manhattan
 
 
+def build_non_manhattan(df_all: pd.DataFrame) -> pd.DataFrame:
+    """Build dataset of trips that are NOT both pickup and dropoff in Manhattan."""
+    df_non_manhattan = df_all[
+        (df_all["pickup_longitude"] != 0)
+        & (df_all["pickup_latitude"] != 0)
+        & (df_all["dropoff_longitude"] != 0)
+        & (df_all["dropoff_latitude"] != 0)
+        & ~(
+            is_in_manhattan(df_all["pickup_longitude"], df_all["pickup_latitude"])
+            & is_in_manhattan(df_all["dropoff_longitude"], df_all["dropoff_latitude"])
+        )
+    ].copy()
+    return df_non_manhattan
+
+
 def feature_engineer_manhattan(df_manhattan: pd.DataFrame) -> pd.DataFrame:
     df = df_manhattan.copy()
 
@@ -423,6 +438,108 @@ def run_eda(ds: Datasets, out_dir: str | Path = "eda_plots") -> None:
     plt.savefig(out_dir / "feature_target_correlations.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
 
+    # ----------------------------
+    # Manhattan vs Non-Manhattan fare comparison
+    # ----------------------------
+    df_non_manhattan = build_non_manhattan(ds.df_all)
+    df_non_manhattan_clean = clean_low_fares(df_non_manhattan, min_fare=1.0)
+    
+    # Calculate statistics
+    manhattan_stats = {
+        "count": len(ds.df_manhattan_clean),
+        "mean": ds.df_manhattan_clean["fare_amount"].mean(),
+        "median": ds.df_manhattan_clean["fare_amount"].median(),
+        "std": ds.df_manhattan_clean["fare_amount"].std(),
+        "q25": ds.df_manhattan_clean["fare_amount"].quantile(0.25),
+        "q75": ds.df_manhattan_clean["fare_amount"].quantile(0.75),
+    }
+    
+    non_manhattan_stats = {
+        "count": len(df_non_manhattan_clean),
+        "mean": df_non_manhattan_clean["fare_amount"].mean(),
+        "median": df_non_manhattan_clean["fare_amount"].median(),
+        "std": df_non_manhattan_clean["fare_amount"].std(),
+        "q25": df_non_manhattan_clean["fare_amount"].quantile(0.25),
+        "q75": df_non_manhattan_clean["fare_amount"].quantile(0.75),
+    }
+    
+    # Create comparison DataFrame
+    comparison_df = pd.DataFrame({
+        "Manhattan": manhattan_stats,
+        "Non-Manhattan": non_manhattan_stats,
+    }).T
+    comparison_df.to_csv(out_dir / "manhattan_vs_non_manhattan_stats.csv")
+    
+    # Box plot comparison
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # Box plot
+    ax1 = axes[0]
+    comparison_data = pd.DataFrame({
+        "Fare Amount ($)": list(ds.df_manhattan_clean["fare_amount"]) + list(df_non_manhattan_clean["fare_amount"]),
+        "Trip Type": ["Manhattan"] * len(ds.df_manhattan_clean) + ["Non-Manhattan"] * len(df_non_manhattan_clean),
+    })
+    sns.boxplot(data=comparison_data, x="Trip Type", y="Fare Amount ($)", ax=ax1)
+    ax1.set_title("Fare Amount: Manhattan vs Non-Manhattan")
+    ax1.set_ylim(0, max(
+        ds.df_manhattan_clean["fare_amount"].quantile(0.95),
+        df_non_manhattan_clean["fare_amount"].quantile(0.95)
+    ))
+    
+    # Histogram overlay
+    ax2 = axes[1]
+    manhattan_fares = ds.df_manhattan_clean["fare_amount"][
+        (ds.df_manhattan_clean["fare_amount"] >= 1) & (ds.df_manhattan_clean["fare_amount"] <= 100)
+    ]
+    non_manhattan_fares = df_non_manhattan_clean["fare_amount"][
+        (df_non_manhattan_clean["fare_amount"] >= 1) & (df_non_manhattan_clean["fare_amount"] <= 100)
+    ]
+    
+    ax2.hist(manhattan_fares, bins=50, alpha=0.6, label="Manhattan", color="steelblue", edgecolor="black")
+    ax2.hist(non_manhattan_fares, bins=50, alpha=0.6, label="Non-Manhattan", color="coral", edgecolor="black")
+    ax2.set_xlabel("Fare Amount ($)")
+    ax2.set_ylabel("Frequency")
+    ax2.set_title("Fare Distribution: Manhattan vs Non-Manhattan")
+    ax2.legend()
+    ax2.set_xlim(1, 100)
+    
+    plt.tight_layout()
+    plt.savefig(out_dir / "manhattan_vs_non_manhattan_comparison.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    
+    # Summary statistics bar chart
+    fig, ax = plt.subplots(figsize=(12, 6))
+    x = np.arange(len(["Mean", "Median", "Q25", "Q75"]))
+    width = 0.35
+    
+    manhattan_values = [
+        manhattan_stats["mean"],
+        manhattan_stats["median"],
+        manhattan_stats["q25"],
+        manhattan_stats["q75"],
+    ]
+    non_manhattan_values = [
+        non_manhattan_stats["mean"],
+        non_manhattan_stats["median"],
+        non_manhattan_stats["q25"],
+        non_manhattan_stats["q75"],
+    ]
+    
+    ax.bar(x - width/2, manhattan_values, width, label="Manhattan", color="steelblue", alpha=0.8)
+    ax.bar(x + width/2, non_manhattan_values, width, label="Non-Manhattan", color="coral", alpha=0.8)
+    
+    ax.set_xlabel("Statistic")
+    ax.set_ylabel("Fare Amount ($)")
+    ax.set_title("Fare Statistics: Manhattan vs Non-Manhattan")
+    ax.set_xticks(x)
+    ax.set_xticklabels(["Mean", "Median", "Q25", "Q75"])
+    ax.legend()
+    ax.grid(axis="y", alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(out_dir / "manhattan_vs_non_manhattan_stats.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
     # Manhattan map (optional; cartopy imported only here)
     try:
         import cartopy.crs as ccrs
@@ -478,6 +595,34 @@ def main() -> None:
     # Basic stats
     print("\nColumns (df_manhattan_clean):")
     print(ds.df_manhattan_clean.columns.tolist())
+
+    # Manhattan vs Non-Manhattan comparison
+    df_non_manhattan = build_non_manhattan(ds.df_all)
+    df_non_manhattan_clean = clean_low_fares(df_non_manhattan, min_fare=1.0)
+    
+    print("\n" + "=" * 60)
+    print("MANHATTAN vs NON-MANHATTAN FARE COMPARISON")
+    print("=" * 60)
+    print(f"\nManhattan trips (fares >= $1):")
+    print(f"  Count:  {len(ds.df_manhattan_clean):,}")
+    print(f"  Mean:   ${ds.df_manhattan_clean['fare_amount'].mean():.2f}")
+    print(f"  Median: ${ds.df_manhattan_clean['fare_amount'].median():.2f}")
+    print(f"  Std:    ${ds.df_manhattan_clean['fare_amount'].std():.2f}")
+    
+    print(f"\nNon-Manhattan trips (fares >= $1):")
+    print(f"  Count:  {len(df_non_manhattan_clean):,}")
+    print(f"  Mean:   ${df_non_manhattan_clean['fare_amount'].mean():.2f}")
+    print(f"  Median: ${df_non_manhattan_clean['fare_amount'].median():.2f}")
+    print(f"  Std:    ${df_non_manhattan_clean['fare_amount'].std():.2f}")
+    
+    mean_diff = df_non_manhattan_clean['fare_amount'].mean() - ds.df_manhattan_clean['fare_amount'].mean()
+    pct_diff = (mean_diff / ds.df_manhattan_clean['fare_amount'].mean()) * 100
+    print(f"\nDifference:")
+    print(f"  Mean difference: ${mean_diff:.2f} ({pct_diff:+.1f}%)")
+    if mean_diff > 0:
+        print(f"  → Non-Manhattan trips are ${mean_diff:.2f} more expensive on average")
+    else:
+        print(f"  → Manhattan trips are ${abs(mean_diff):.2f} more expensive on average")
 
     # Export for external training/tuning (e.g., Google Colab)
     out_csv = Path("data") / "df_manhattan_iqr.csv"
