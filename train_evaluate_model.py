@@ -178,16 +178,8 @@ if __name__ == "__main__":
     print("Model training and evaluation complete!")
     print("="*50)
     
-    # Commented out graph generation code - moved to part3_evaluation_graphs.py
-    # Uncomment and import functions from part3_evaluation_graphs.py when needed:
-    #
-    # from part3_evaluation_graphs import (
-    #     plot_validation_curve_n_estimators,
-    #     plot_predictions_vs_actual,
-    #     plot_residuals,
-    #     plot_error_distribution
-    # )
-    #
-    # plot_predictions_vs_actual(y_test, y_test_pred, save_filename="adaboost_predictions_test.png")
-    # plot_residuals(y_test, y_test_pred, save_filename="adaboost_residual_plot.png")
-    # plot_error_distribution(y_test, y_test_pred, save_filename="adaboost_error_distribution.png")
+    
+    from part3_evaluation_graphs import (plot_validation_curve_n_estimators, plot_predictions_vs_actual, plot_residuals, plot_error_distribution)
+    plot_predictions_vs_actual(y_test, y_test_pred, save_filename="adaboost_predictions_test.png")
+    plot_residuals(y_test, y_test_pred, save_filename="adaboost_residual_plot.png")
+    plot_error_distribution(y_test, y_test_pred, save_filename="adaboost_error_distribution.png")
