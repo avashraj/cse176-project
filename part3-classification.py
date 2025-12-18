@@ -1094,6 +1094,6 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     # Comparison summary
     # ------------------------------------------------------------------
-    save_model_comparison_summary(adaboost_metrics, gradientboost_metrics, tree_matrics, OUTPUT_DIR)
+    save_model_comparison_summary(adaboost_metrics, gradientboost_metrics, tree_metrics, OUTPUT_DIR)
 
     print("\nDone. Check the 'results_classification/' folder for plots and result files.")
