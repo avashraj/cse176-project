@@ -12,7 +12,7 @@ preprocessed_target.csv
 # Virtual environments
 .venv
 
-MNIST-LeNet5.mat
+part2/MNIST-LeNet5.mat
 
 uber.csv
 
@@ -26,3 +26,8 @@ results_classification/gradboost/*.csv
 results_classification/baseline_tree/*.txt
 results_classification/baseline_tree/*.png
 results_classification/baseline_tree/*.csv
+
+part2/*.pdf
+part2/*.png
+part2/*.txt
+part2/*.pkl
