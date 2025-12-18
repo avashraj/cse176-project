@@ -11,3 +11,18 @@ preprocessed_target.csv
 
 # Virtual environments
 .venv
+
+MNIST-LeNet5.mat
+
+uber.csv
+
+results_classification/model_comparison_summary.txt
+results_classification/adaboost/*.txt
+results_classification/adaboost/*.png
+results_classification/adaboost/*.csv
+results_classification/gradboost/*.txt
+results_classification/gradboost/*.png
+results_classification/gradboost/*.csv
+results_classification/baseline_tree/*.txt
+results_classification/baseline_tree/*.png
+results_classification/baseline_tree/*.csv
